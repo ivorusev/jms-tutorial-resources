@@ -1,0 +1,108 @@
+WildflyHornetQJMSProvisioner
+
+	//		ConnectionFactory factory = InitialContext.doLookup("java:jboss/DefaultJMSConnectionFactory");
+	//		Connection connection = factory.createConnection();
+	//		connection.start();
+	//		Queue queue = InitialContext.doLookup("java:jboss/exported/jms/queue/test");
+	//
+	//		session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+	//		consumer = session.createConsumer(queue);
+
+A subscriber (also known as a consumer) is an application that creates a subscription to receive publications (or messages) from desired topic(s).
+
+There are two types of subscribers:
+
+Non-Durable subscriber: This type of subscriber application will get publications from a messaging provider as long as the application is running. Once the application ends, the messaging provider removes the subscription.
+
+Durable Subscriber: This is the second type of application which receive publications as long as they are running. When the application ends, the messaging provider will cache publications for the subscriber and deliver them when the application comes back.
+
+Note that if you need to receive messages asynchronously in a Java EE 7 Web or EJB application then, as with previous versions of Java EE, you need to use a message-driven bean rather the setMessageListener method.
+
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationLookup",
+            propertyValue = "queues/myQueue"),
+        @ActivationConfigProperty(propertyName = "destinationType",
+            propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "messageSelector",propertyValue = "type=3")
+    })
+
+
+Message Acknowledgment
+The JMS Server retains each message until the consumer acknowledges the message. When messages are consumed within a transaction, the acknowledgment is made when the transaction commits. With nontransacted sessions, the receiver specifies an acknowledgment mode when the session is created. The JMS specification defines three standard acknowledgment modes, and the WebLogic JMS implementation adds two additional options.
+
+Table 7.4 lists the JMS acknowledgment modes.
+
+Table 7.4 JMS Acknowledgment Modes
+Acknowledgment Mode
+
+Description
+
+AUTO_ACKNOWLEDGE
+
+For synchronous receivers, the message will be automatically acknowledged when the consumer's receive method call returns without throwing an exception. With an asynchronous consumer, the message is acknowledged when the onMessage callback returns.
+
+DUPS_OK_ACKNOWLEDGE
+
+This acknowledgment mode enables JMS to lazily acknowledge message receipt. It is more efficient than AUTO_ACKNOWLEDGE because every message is not acknowledged, but messages may be redelivered if a system crash or network outage occurs.
+
+CLIENT_ACKNOWLEDGE
+
+This acknowledgment mode requires the client to use the javax.jms.Message.acknowledge() method to explicitly acknowledge messages. It is not necessary for the client to acknowledge every message. Instead, a call to acknowledge() will acknowledge the current and any previous messages.
+
+NO_ACKNOWLEDGE
+
+This is a WebLogic JMS acknowledgment mode to indicate that no acknowledgment is required. The JMS implementation does not retain the message after delivering it to the consumer.
+
+MULTICAST_NO_ACKNOWLEDGE
+
+This is a WebLogic JMS acknowledgment mode that delivers JMS messages via IP multicast to topic subscribers. Like NO_ACKNOWLEDGE, the JMS implementation does not retain the message after delivery.
+
+
+
+
+The JMS API defines five message body formats, also called message types, which allow you to send and to receive data in many different forms and provide compatibility with existing messaging formats. Table 30–2 describes these message types.
+
+Table 30–2 JMS Message Types
+Message Type 
+
+Body Contains 
+
+TextMessage
+
+A java.lang.String object (for example, the contents of an XML file).
+
+MapMessage
+
+A set of name-value pairs, with names as String objects and values as primitive types in the Java programming language. The entries can be accessed sequentially by enumerator or randomly by name. The order of the entries is undefined.
+
+BytesMessage
+
+A stream of uninterpreted bytes. This message type is for literally encoding a body to match an existing message format. 
+
+StreamMessage
+
+A stream of primitive values in the Java programming language, filled and read sequentially. 
+
+ObjectMessage
+
+A Serializable object in the Java programming language.
+
+Message
+
+Nothing. Composed of header fields and properties only. This message type is useful when a message body is not required. 
+
+The JMS API provides methods for creating messages of each type and for filling in their contents. For example, to create and send a TextMessage, you might use the following statements:
+
+TextMessage message = session.createTextMessage();
+message.setText(msg_text);     // msg_text is a String
+producer.send(message);
+At the consuming end, a message arrives as a generic Message object and must be cast to the appropriate message type. You can use one or more getter methods to extract the message contents. The following code fragment uses the getText method:
+
+Message m = consumer.receive();
+if (m instanceof TextMessage) {
+    TextMessage message = (TextMessage) m;
+    System.out.println("Reading message: " + message.getText());
+} else {
+    // Handle error
+}
+
